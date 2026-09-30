@@ -2,33 +2,22 @@
 
 ## Engine decision
 
-Undecided between **Godot 4 (GDScript)** and **Bevy (Rust)**. Each engine gets
-a throwaway **spike** built to the same spec:
+**Godot 4 (GDScript), decided 2026-09-30.** Bevy (Rust) was the alternative.
+The Godot spike (a capsule on a plane with a networked second player,
+server-authoritative, listen and headless servers, version and map-hash
+check) did everything needed without fighting the engine. It was promoted to
+the repo root rather than rewritten.
 
-> A capsule moving on a plane, with a second player connected over the
-> network. Server-authoritative, listen-server capable, headless-server
-> capable, version and map-hash check on connect.
+Reasons Godot won:
 
-| Spike | Status |
-|---|---|
-| `spike-godot/` | Working: listen and dedicated server, handshake, prediction/reconciliation, tests |
-| `spike-bevy/` | Not started |
+- **An editor for maps.** Bevy has none, so Blender would become the level
+  editor.
+- **Mature pieces:** glTF import, CSG, the Terrain3D and func_godot add-ons.
+- **Headless:** the same binary runs as a dedicated server.
+- **Enough networking:** its `SceneMultiplayer` authentication step and RPCs
+  cover what we need, and it stays out of the way of custom prediction.
 
-After both exist, pick one. The loser is deleted. The winner is either
-promoted or rebuilt cleanly at the repo root. Neither spike is the game.
-
-### What to compare
-
-- How much of the netcode the engine does for you, and how much it fights
-  a custom prediction/reconciliation loop.
-- Headless server: startup time, memory, and ticks per second at 10× time
-  scale with many characters (this matters for the ladder).
-- Raycast and physics-query throughput for bot perception.
-- Iteration speed: edit → run loop, and how testable it is headless.
-- Tooling for building maps.
-- Cross-compiling for Windows and Mac later.
-
-### Godot spike findings so far
+### Findings from the spike
 
 - **Handshake:** `SceneMultiplayer`'s auth step (`auth_callback`,
   `send_auth`, `complete_auth`) fits the version/map-hash check exactly. A peer

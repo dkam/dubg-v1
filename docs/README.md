@@ -12,6 +12,5 @@ monetisation. Linux first, Windows and Mac later. Metric units throughout
 | [ladder.md](ladder.md) | Self-tuning: headless arenas, TrueSkill, evolution, progression tiers |
 | [roadmap.md](roadmap.md) | Build order and the engine decision |
 
-Engine is **undecided** between Godot 4 (GDScript) and Bevy (Rust). Each gets
-a throwaway spike (`spike-godot/`, `spike-bevy/`) building the same thing; see
-[roadmap.md](roadmap.md).
+The engine is **Godot 4** (GDScript). The project lives at the repo root. See
+[roadmap.md](roadmap.md) for why.

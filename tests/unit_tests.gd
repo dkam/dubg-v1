@@ -1,6 +1,6 @@
 extends SceneTree
 ## Headless unit tests. Run via tests/run.sh, or:
-##   godot --headless --path spike-godot --script res://tests/unit_tests.gd
+##   godot --headless --path . --script res://tests/unit_tests.gd
 
 var _checks := 0
 var _failures := 0

@@ -509,7 +509,7 @@ func _process(_delta: float) -> void:
 	if _hud == null:
 		return
 	var lines := PackedStringArray()
-	lines.append("ROUT spike %s  |  %s  |  peer %d  |  tick %d  |  players %d" % [
+	lines.append("ROUT %s  |  %s  |  peer %d  |  tick %d  |  players %d" % [
 		config.version, Role.keys()[role].to_lower(), local_id, tick, world.characters.size()])
 	if role == Role.CLIENT:
 		lines.append("rtt %d ms (+%d fake)  |  unacked inputs %d  |  correction %.1f cm (max %.1f)" % [

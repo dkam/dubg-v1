@@ -1,10 +1,10 @@
 extends Node
 ## Entry point: parse flags, show the Host/Join menu, run a Session.
 ##
-##   godot --path spike-godot                               menu
-##   godot --path spike-godot -- --host [--port=N] [--name=X]
-##   godot --path spike-godot -- --join=ADDR[:PORT] [--name=X]
-##   godot --headless --path spike-godot -- --server [--port=N]
+##   godot --path .                                         menu
+##   godot --path . -- --host [--port=N] [--name=X]
+##   godot --path . -- --join=ADDR[:PORT] [--name=X]
+##   godot --headless --path . -- --server [--port=N]
 ##
 ## Test flags: --auto=circle|line|idle  --fake-lag-ms=N  --fake-version=V
 ##             --quit-after=SEC
@@ -130,7 +130,7 @@ func _build_menu() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
 	var sub := Label.new()
-	sub.text = "Godot spike %s" % Protocol.GAME_VERSION
+	sub.text = "version %s" % Protocol.GAME_VERSION
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(sub)
 

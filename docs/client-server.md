@@ -4,8 +4,8 @@
 
 The server is **the same project** as the client, run headless:
 
-- Godot: `godot --headless -- --server`
-- Bevy: a server binary sharing a `sim` crate with the client.
+- `godot --headless --path . -- --server`
+- or the Docker image (see the top-level README).
 
 **Listen server** is the normal case: a friend clicks **Host** and plays in
 the same process that is serving. A dedicated headless server is the same code
