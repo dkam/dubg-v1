@@ -1,0 +1,152 @@
+[gd_scene format=3]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_mat")
+
+[sub_resource type="Environment" id="env"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+tonemap_mode = 2
+
+[sub_resource type="FastNoiseLite" id="noise"]
+frequency = 0.02
+
+[sub_resource type="NoiseTexture2D" id="ground_tex"]
+width = 512
+height = 512
+seamless = true
+noise = SubResource("noise")
+
+[sub_resource type="StandardMaterial3D" id="ground_mat"]
+albedo_color = Color(0.45, 0.56, 0.36, 1)
+albedo_texture = SubResource("ground_tex")
+uv1_scale = Vector3(0.05, 0.05, 0.05)
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="ground_mesh"]
+material = SubResource("ground_mat")
+size = Vector3(200, 1, 200)
+
+[sub_resource type="BoxShape3D" id="ground_shape"]
+size = Vector3(200, 1, 200)
+
+[sub_resource type="StandardMaterial3D" id="pillar_mat"]
+albedo_color = Color(0.62, 0.6, 0.56, 1)
+
+[sub_resource type="BoxMesh" id="pillar_mesh"]
+material = SubResource("pillar_mat")
+size = Vector3(1, 3, 1)
+
+[sub_resource type="BoxShape3D" id="pillar_shape"]
+size = Vector3(1, 3, 1)
+
+[node name="Plane" type="Node3D"]
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-50, 30, 0)
+shadow_enabled = true
+
+[node name="Env" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Ground" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="Shape" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("ground_shape")
+
+[node name="Mesh" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("ground_mesh")
+
+[node name="Pillar0" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 1.5, 20)
+
+[node name="Shape" type="CollisionShape3D" parent="Pillar0"]
+shape = SubResource("pillar_shape")
+
+[node name="Mesh" type="MeshInstance3D" parent="Pillar0"]
+mesh = SubResource("pillar_mesh")
+
+[node name="Pillar1" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 1.5, 20)
+
+[node name="Shape" type="CollisionShape3D" parent="Pillar1"]
+shape = SubResource("pillar_shape")
+
+[node name="Mesh" type="MeshInstance3D" parent="Pillar1"]
+mesh = SubResource("pillar_mesh")
+
+[node name="Pillar2" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 1.5, -20)
+
+[node name="Shape" type="CollisionShape3D" parent="Pillar2"]
+shape = SubResource("pillar_shape")
+
+[node name="Mesh" type="MeshInstance3D" parent="Pillar2"]
+mesh = SubResource("pillar_mesh")
+
+[node name="Pillar3" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 1.5, -20)
+
+[node name="Shape" type="CollisionShape3D" parent="Pillar3"]
+shape = SubResource("pillar_shape")
+
+[node name="Mesh" type="MeshInstance3D" parent="Pillar3"]
+mesh = SubResource("pillar_mesh")
+
+[node name="Pillar4" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 30)
+
+[node name="Shape" type="CollisionShape3D" parent="Pillar4"]
+shape = SubResource("pillar_shape")
+
+[node name="Mesh" type="MeshInstance3D" parent="Pillar4"]
+mesh = SubResource("pillar_mesh")
+
+[node name="Pillar5" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -30)
+
+[node name="Shape" type="CollisionShape3D" parent="Pillar5"]
+shape = SubResource("pillar_shape")
+
+[node name="Mesh" type="MeshInstance3D" parent="Pillar5"]
+mesh = SubResource("pillar_mesh")
+
+[node name="Pillar6" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 1.5, 0)
+
+[node name="Shape" type="CollisionShape3D" parent="Pillar6"]
+shape = SubResource("pillar_shape")
+
+[node name="Mesh" type="MeshInstance3D" parent="Pillar6"]
+mesh = SubResource("pillar_mesh")
+
+[node name="Pillar7" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 1.5, 0)
+
+[node name="Shape" type="CollisionShape3D" parent="Pillar7"]
+shape = SubResource("pillar_shape")
+
+[node name="Mesh" type="MeshInstance3D" parent="Pillar7"]
+mesh = SubResource("pillar_mesh")
+
+[node name="Pillar8" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1.5, -12)
+
+[node name="Shape" type="CollisionShape3D" parent="Pillar8"]
+shape = SubResource("pillar_shape")
+
+[node name="Mesh" type="MeshInstance3D" parent="Pillar8"]
+mesh = SubResource("pillar_mesh")
+
+[node name="Pillar9" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 1.5, 8)
+
+[node name="Shape" type="CollisionShape3D" parent="Pillar9"]
+shape = SubResource("pillar_shape")
+
+[node name="Mesh" type="MeshInstance3D" parent="Pillar9"]
+mesh = SubResource("pillar_mesh")
