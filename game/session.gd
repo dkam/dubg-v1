@@ -90,7 +90,7 @@ func start(cfg: Dictionary) -> Error:
 	_smp.multiplayer_peer = peer
 
 	if role == Role.CLIENT:
-		_log("connecting to %s:%d as %s" % [cfg.address, cfg.port, cfg.name])
+		_log("connecting to %s:%d as %s (version %s)" % [cfg.address, cfg.port, cfg.name, cfg.version])
 	else:
 		if not world.load_map(cfg.map):
 			return ERR_FILE_NOT_FOUND

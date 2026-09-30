@@ -1,0 +1,7 @@
+.git
+.github
+.godot
+deploy
+docs
+tests
+*.md

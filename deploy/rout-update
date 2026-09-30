@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Pulls the newest server image and restarts onto it, but only when nobody is
+# playing. Run it every few minutes from rout-update.timer (or cron) in the
+# directory holding compose.yaml and .env.
+#
+# The server's status file says how many players are connected. If it is
+# missing or stale (older than ROUT_STALE_AFTER seconds) the server is taken
+# to be broken, and the update goes ahead.
+set -euo pipefail
+cd "${ROUT_DIR:-$(dirname "$(readlink -f "$0")")}"
+STALE_AFTER=${ROUT_STALE_AFTER:-30}
+STATUS_FILE=/tmp/rout-status.json
+log() { echo "rout-update: $*"; }
+
+docker compose pull --quiet
+image=$(docker compose config --images | head -1)
+want=$(docker image inspect --format '{{.Id}}' "$image")
+cid=$(docker compose ps -q | head -1)
+
+if [ -z "$cid" ]; then
+  log "server not running; starting $image"
+  docker compose up -d
+  exit 0
+fi
+
+have=$(docker inspect --format '{{.Image}}' "$cid")
+[ "$want" = "$have" ] && exit 0
+
+status=$(docker exec "$cid" cat "$STATUS_FILE" 2>/dev/null || true)
+players=$(grep -o '"players": *[0-9]*' <<<"$status" | grep -o '[0-9]*$' || true)
+updated=$(grep -o '"updated_unix": *[0-9]*' <<<"$status" | grep -o '[0-9]*$' || true)
+age=$(( $(date +%s) - ${updated:-0} ))
+
+if [ -n "$players" ] && [ "$age" -le "$STALE_AFTER" ] && [ "$players" -gt 0 ]; then
+  log "new image ready, waiting: $players player(s) connected"
+  exit 0
+fi
+if [ -z "$players" ] || [ "$age" -gt "$STALE_AFTER" ]; then
+  log "status file missing or ${age}s old; treating the server as hung"
+fi
+log "updating to $image ($want)"
+docker compose up -d
+docker image prune -f >/dev/null

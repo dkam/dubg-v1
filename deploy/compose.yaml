@@ -1,0 +1,10 @@
+# Rout dedicated server. Put this, .env and rout-update in one directory
+# (e.g. /opt/rout), then `docker compose up -d`. See the top-level README.
+services:
+  server:
+    image: ghcr.io/dkam/rout:${ROUT_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${ROUT_PORT:-24650}:24650/udp"
+    environment:
+      ROUT_PASSWORD: ${ROUT_PASSWORD:?set ROUT_PASSWORD in .env}

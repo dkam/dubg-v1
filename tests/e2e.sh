@@ -4,7 +4,7 @@
 #             the wrong version that must be rejected.
 # Scenario 2: listen server (host plays) plus one client.
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 GODOT=${GODOT:-godot}
 OUT=$(mktemp -d "${TMPDIR:-/tmp}/rout-e2e.XXXXXX")
 MAX_CORRECTION_CM=${MAX_CORRECTION_CM:-5}
