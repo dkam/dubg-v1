@@ -105,3 +105,9 @@ it then publishes `ghcr.io/dkam/rout:latest` and `:sha-<commit>`.
 | `deploy/` | Compose file, updater, systemd units |
 | `tools/install-godot.sh` | The pinned Godot build, used by the image and CI |
 | `docs/` | Design: game, client-server, AI, ladder, roadmap |
+
+## Credits
+
+- Character model and animations: [Universal Animation Library](https://quaternius.com/packs/universalanimationlibrary.html)
+  by [Quaternius](https://quaternius.com), CC0. Not required, but deserved;
+  consider [supporting them](https://www.patreon.com/quaternius).
