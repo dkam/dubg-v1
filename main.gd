@@ -4,7 +4,10 @@ extends Node
 ##   godot --path .                                         menu
 ##   godot --path . -- --host [--port=N] [--name=X]
 ##   godot --path . -- --join=ADDR[:PORT] [--name=X]
-##   godot --headless --path . -- --server [--port=N]
+##   godot --headless --path . -- --server [--port=N] [--password=X] [--status-file=PATH]
+##
+## The password can also come from the ROUT_PASSWORD environment variable,
+## which keeps it out of `ps`.
 ##
 ## Test flags: --auto=circle|line|idle  --fake-lag-ms=N  --fake-version=V
 ##             --quit-after=SEC
@@ -17,6 +20,7 @@ var _menu: Control
 var _status: Label
 var _name_edit: LineEdit
 var _addr_edit: LineEdit
+var _password_edit: LineEdit
 
 
 func _ready() -> void:
@@ -42,8 +46,10 @@ func _parse_args(args: PackedStringArray) -> Dictionary:
 		"map": "plane",
 		"auto": "",
 		"lag_ms": 0,
-		"version": Protocol.GAME_VERSION,
+		"version": Protocol.game_version(),
 		"quit_after": 0.0,
+		"password": OS.get_environment("ROUT_PASSWORD"),
+		"status_file": "",
 	}
 	for arg in args:
 		var key := arg.trim_prefix("--").get_slice("=", 0)
@@ -69,6 +75,10 @@ func _parse_args(args: PackedStringArray) -> Dictionary:
 				cfg.version = value
 			"quit-after":
 				cfg.quit_after = value.to_float()
+			"password":
+				cfg.password = value
+			"status-file":
+				cfg.status_file = value
 			_:
 				return {"error": "unknown flag '%s'" % arg}
 	return cfg
@@ -130,7 +140,7 @@ func _build_menu() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
 	var sub := Label.new()
-	sub.text = "version %s" % Protocol.GAME_VERSION
+	sub.text = "version %s" % Protocol.game_version()
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(sub)
 
@@ -142,6 +152,11 @@ func _build_menu() -> void:
 	_addr_edit.text = "%s:%d" % [_cfg.address, _cfg.port]
 	_addr_edit.placeholder_text = "address:port"
 	box.add_child(_addr_edit)
+	_password_edit = LineEdit.new()
+	_password_edit.text = _cfg.password
+	_password_edit.placeholder_text = "Password (blank for none)"
+	_password_edit.secret = true
+	box.add_child(_password_edit)
 
 	var host := Button.new()
 	host.text = "Host (listen server)"
@@ -163,6 +178,7 @@ func _on_menu_pressed(role: String) -> void:
 	var cfg := _cfg.duplicate()
 	cfg.role = role
 	cfg.name = Protocol.clean_name(_name_edit.text)
+	cfg.password = _password_edit.text
 	if not _apply_address(cfg, _addr_edit.text):
 		_status.text = "Address should look like 192.168.1.20:%d" % Protocol.DEFAULT_PORT
 		return

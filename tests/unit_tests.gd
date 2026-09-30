@@ -16,6 +16,9 @@ func _run() -> void:
 	test_input_clamps()
 	test_check_hello()
 	test_map_hash()
+	test_password_proof()
+	test_check_hello_password()
+	test_game_version()
 	await test_replay_reproduces_original_run()
 	print("%d checks, %d failed" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)
@@ -67,6 +70,45 @@ func test_map_hash() -> void:
 	check(h == Protocol.map_hash("plane"), "hash is stable")
 	check(Protocol.map_hash("nope") == "", "unknown map hashes to empty")
 	check(Protocol.map_hash("../plane") == "", "path-like map id refused")
+
+
+func test_password_proof() -> void:
+	var a := Protocol.password_proof("hunter2", "nonce1")
+	check(a.length() == 64, "proof is SHA-256 hex")
+	check(a == Protocol.password_proof("hunter2", "nonce1"), "proof is deterministic")
+	check(a != Protocol.password_proof("hunter2", "nonce2"), "proof depends on the nonce")
+	check(a != Protocol.password_proof("hunter3", "nonce1"), "proof depends on the password")
+	check(Protocol.password_proof("", "nonce1") == "", "no password, no proof")
+
+
+func test_check_hello_password() -> void:
+	var expected := Protocol.password_proof("hunter2", "n")
+	var hello := {"version": "1.0", "map_id": "plane", "map_hash": "abc", "proof": expected}
+	check(Protocol.check_hello(hello, "1.0", "plane", "abc", expected) == "", "right password accepted")
+	hello.proof = Protocol.password_proof("wrong", "n")
+	check(Protocol.check_hello(hello, "1.0", "plane", "abc", expected) == "wrong password", "wrong password refused")
+	hello.erase("proof")
+	check(Protocol.check_hello(hello, "1.0", "plane", "abc", expected) == "password required", "missing password refused")
+	check(Protocol.check_hello(hello, "1.0", "plane", "abc") == "", "open server ignores a missing proof")
+	hello.version = "0.9"
+	check(Protocol.check_hello(hello, "1.0", "plane", "abc", expected).begins_with("version mismatch"),
+		"version is reported before the password")
+
+
+## The version carries a hash of the code, so a server and client built from
+## different code refuse each other instead of desyncing.
+func test_game_version() -> void:
+	var files := Protocol.code_files()
+	check("res://sim/character.gd" in files, "code hash covers the simulation")
+	check("res://project.godot" in files, "code hash covers project settings (tick rate, physics)")
+	check(Array(files).all(func(f: String) -> bool: return not f.begins_with("res://tests/")),
+		"tests don't change the version")
+	check(Array(files).all(func(f: String) -> bool: return not f.begins_with("res://maps/")),
+		"maps are covered by their own hash")
+	var v := Protocol.game_version()
+	check(v.begins_with(Protocol.GAME_VERSION + "+") and v.length() == Protocol.GAME_VERSION.length() + 9,
+		"version is GAME_VERSION+8 hex (%s)" % v)
+	check(v == Protocol.game_version(), "version is stable")
 
 
 ## Reconciliation depends on this: restoring a captured state and replaying

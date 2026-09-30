@@ -20,6 +20,7 @@ const MAX_PENDING := 120          # client keeps two seconds of unacked inputs
 const INTERP_DELAY_TICKS := 6     # remote players draw 100 ms behind
 const REJECT_GRACE_SEC := 0.5     # lets the reject message out before dropping
 const CORRECTION_WARMUP_TICKS := 60
+const STATUS_EVERY_TICKS := 120   # status file refresh, when enabled
 
 var role: Role
 var config: Dictionary
@@ -37,6 +38,8 @@ var _seq := 0
 var _players := {}        # peer id -> {name, queue, newest_seq, last_seq, travelled}
 var _joining_names := {}  # peer id -> name, between accept and peer_connected
 var _rejected := {}       # peer id -> true, until dropped
+var _nonces := {}         # peer id -> this connection's password nonce
+var _started_msec := 0
 var _spawn_index := 0
 var _loot_seed := 0
 
@@ -92,12 +95,15 @@ func start(cfg: Dictionary) -> Error:
 		if not world.load_map(cfg.map):
 			return ERR_FILE_NOT_FOUND
 		_loot_seed = randi()
-		_log("serving map '%s' on port %d, version %s" % [world.map_id, cfg.port, cfg.version])
+		_started_msec = Time.get_ticks_msec()
+		_log("serving map '%s' on port %d, version %s, %s" % [world.map_id, cfg.port, cfg.version,
+			"password required" if cfg.password != "" else "no password"])
 		if role == Role.HOST:
 			_add_player(1, cfg.name)
 			_become_local(1)
 		elif not _headless():
 			world.add_overview_camera()
+		_write_status()
 
 	if cfg.quit_after > 0.0:
 		get_tree().create_timer(cfg.quit_after).timeout.connect(_on_quit_after)
@@ -127,11 +133,14 @@ func _physics_process(_delta: float) -> void:
 func _on_peer_authenticating(id: int) -> void:
 	if role == Role.CLIENT:
 		return  # the server speaks first
+	_nonces[id] = Crypto.new().generate_random_bytes(16).hex_encode()
 	_smp.send_auth(id, _encode({
 		"t": "server_hello",
 		"version": config.version,
 		"map_id": world.map_id,
 		"map_hash": world.map_hash,
+		"nonce": _nonces[id],
+		"password": config.password != "",
 	}))
 
 
@@ -147,7 +156,9 @@ func _server_auth(id: int, msg: Dictionary) -> void:
 	var player_name := Protocol.clean_name(msg.get("name"))
 	var reason := "malformed hello"
 	if msg.get("t") == "client_hello":
-		reason = Protocol.check_hello(msg, config.version, world.map_id, world.map_hash)
+		var expected := Protocol.password_proof(config.password, _nonces.get(id, ""))
+		reason = Protocol.check_hello(msg, config.version, world.map_id, world.map_hash, expected)
+	_nonces.erase(id)
 	if reason != "":
 		_log("rejected peer %d (%s): %s" % [id, player_name, reason])
 		_rejected[id] = true
@@ -174,6 +185,7 @@ func _client_auth(msg: Dictionary) -> void:
 				"map_id": map_id,
 				"map_hash": Protocol.map_hash(map_id),
 				"name": config.name,
+				"proof": Protocol.password_proof(config.password, str(msg.get("nonce", ""))),
 			}))
 		"accept":
 			_smp.complete_auth(1)
@@ -184,6 +196,7 @@ func _client_auth(msg: Dictionary) -> void:
 func _on_peer_authentication_failed(id: int) -> void:
 	_rejected.erase(id)
 	_joining_names.erase(id)
+	_nonces.erase(id)
 	if role != Role.CLIENT:
 		_log("peer %d dropped during handshake" % id)
 
@@ -197,6 +210,7 @@ func _on_peer_connected(id: int) -> void:
 	_joining_names.erase(id)
 	var character := _add_player(id, player_name)
 	_log("accepted peer %d (%s)" % [id, player_name])
+	_write_status()
 	_s2c_welcome.rpc_id(id, {
 		"map_id": world.map_id,
 		"loot_seed": _loot_seed,
@@ -213,6 +227,7 @@ func _on_peer_disconnected(id: int) -> void:
 	_players.erase(id)
 	world.remove_character(id)
 	_log("peer %d (%s) left after travelling %.2f m" % [id, player.name, player.travelled])
+	_write_status()
 	_broadcast_roster()
 
 
@@ -243,6 +258,34 @@ func _server_tick() -> void:
 	tick += 1
 	if tick % Protocol.SNAPSHOT_EVERY == 0:
 		_broadcast_snapshot()
+	if tick % STATUS_EVERY_TICKS == 0:
+		_write_status()
+
+
+## --status-file: a small JSON file an updater can read to see whether anyone
+## is playing and whether the server is alive (it's rewritten every two
+## seconds). Written to a temp file then renamed, so readers never see half.
+func _write_status() -> void:
+	if config.status_file == "":
+		return
+	var names := PackedStringArray()
+	for id: int in _players:
+		names.append(_players[id].name)
+	var tmp: String = config.status_file + ".tmp"
+	var file := FileAccess.open(tmp, FileAccess.WRITE)
+	if file == null:
+		push_error("can't write status file %s: %s" % [tmp, error_string(FileAccess.get_open_error())])
+		return
+	file.store_string(JSON.stringify({
+		"version": config.version,
+		"map": world.map_id,
+		"players": _players.size(),
+		"names": names,
+		"uptime_s": (Time.get_ticks_msec() - _started_msec) / 1000,
+		"updated_unix": int(Time.get_unix_time_from_system()),
+	}))
+	file.close()
+	DirAccess.rename_absolute(tmp, config.status_file)
 
 
 func _broadcast_snapshot() -> void:
