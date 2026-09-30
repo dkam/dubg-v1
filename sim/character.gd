@@ -32,29 +32,17 @@ func _init() -> void:
 	add_child(shape)
 
 
-func setup(id: int, player_name: String) -> void:
+## `with_visuals` is false on headless processes: the server simulates the
+## capsule and never pays for a skinned model it can't show.
+func setup(id: int, player_name: String, with_visuals := false) -> void:
 	peer_id = id
 	name = "Player%d" % id
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color.from_hsv(fmod(id * 0.618034, 1.0), 0.55, 0.9)
-
-	var capsule := CapsuleMesh.new()
-	capsule.radius = RADIUS
-	capsule.height = HEIGHT
-	capsule.material = mat
-	var body := MeshInstance3D.new()
-	body.mesh = capsule
-	body.position.y = HEIGHT / 2.0
-	add_child(body)
-
-	# A visor on the front (-Z) so facing is readable.
-	var visor_mesh := BoxMesh.new()
-	visor_mesh.size = Vector3(0.24, 0.1, 0.3)
-	visor_mesh.material = mat
-	var visor := MeshInstance3D.new()
-	visor.mesh = visor_mesh
-	visor.position = Vector3(0.0, 1.58, -RADIUS)
-	add_child(visor)
+	display_name = player_name
+	if not with_visuals:
+		return
+	var visual := CharacterVisual.new(Color.from_hsv(fmod(id * 0.618034, 1.0), 0.55, 0.9))
+	visual.name = "Visual"
+	add_child(visual)
 
 	_label = Label3D.new()
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED

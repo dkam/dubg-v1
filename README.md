@@ -99,6 +99,8 @@ it then publishes `ghcr.io/dkam/rout:latest` and `:sha-<commit>`.
 | `net/protocol.gd` | Version, tick rate, map hash, password proof, handshake checks |
 | `game/session.gd` | Server half and client half (one script, so RPC tables match) |
 | `game/world.gd` | Map loading and characters |
+| `game/character_visual.gd` | The animated mannequin on top of the capsule (never built on headless servers) |
+| `assets/characters/` | Quaternius Universal Animation Library, CC0 (see its `LICENSE.txt`) |
 | `maps/<id>/` | `geometry.tscn` plus `data.json` (spawns, zone, loot) |
 | `deploy/` | Compose file, updater, systemd units |
 | `tools/install-godot.sh` | The pinned Godot build, used by the image and CI |

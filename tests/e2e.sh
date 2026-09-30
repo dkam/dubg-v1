@@ -48,6 +48,7 @@ expect "status file showed 2 players mid-match ($(cat $OUT/status-mid.json 2>/de
   "grep -q '\"players\": *2[,}]' $OUT/status-mid.json"
 expect "status file showed 0 players at the end ($(cat $OUT/status.json 2>/dev/null))" \
   "grep -q '\"players\": *0[,}]' $OUT/status.json"
+expect "dedicated server built no character visuals (visuals=$(field server visuals))" "[ \"$(field server visuals)\" = 0 ]"
 expect "status file carries the version" "grep -q '\"version\": *\"[^\"]*+[0-9a-f]\\{8\\}\"' $OUT/status.json"
 for c in alpha bravo; do
   other=$([ $c = alpha ] && echo bravo || echo alpha)

@@ -19,6 +19,10 @@ func _run() -> void:
 	test_password_proof()
 	test_check_hello_password()
 	test_game_version()
+	test_headless_character_has_no_visuals()
+	test_character_is_a_person()
+	test_locomotion_clip_choice()
+	test_body_turns_toward_travel()
 	await test_replay_reproduces_original_run()
 	print("%d checks, %d failed" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)
@@ -109,6 +113,73 @@ func test_game_version() -> void:
 	check(v.begins_with(Protocol.GAME_VERSION + "+") and v.length() == Protocol.GAME_VERSION.length() + 9,
 		"version is GAME_VERSION+8 hex (%s)" % v)
 	check(v == Protocol.game_version(), "version is stable")
+
+
+func _count_visual_nodes(node: Node) -> int:
+	var n := 1 if node is VisualInstance3D or node is AnimationMixer else 0
+	for child in node.get_children():
+		n += _count_visual_nodes(child)
+	return n
+
+
+## The dedicated server (and the bot arenas) must not pay for skinned meshes
+## and animation nobody sees.
+func test_headless_character_has_no_visuals() -> void:
+	var world := World.new()
+	root.add_child(world)
+	var c := world.spawn_character(1, "server-side", Vector3.ZERO, false)
+	check(_count_visual_nodes(c) == 0, "character without visuals has no meshes, labels or animation")
+	world.free()
+
+
+func test_character_is_a_person() -> void:
+	var world := World.new()
+	root.add_child(world)
+	var c := world.spawn_character(1, "someone", Vector3.ZERO, true)
+	var visual := c.get_node_or_null("Visual") as CharacterVisual
+	check(visual != null, "character with visuals has a CharacterVisual")
+	if visual:
+		var player := visual.animation_player()
+		check(player != null, "visual has an AnimationPlayer")
+		for clip in ["Idle", "Walk", "Jog_Fwd", "Sprint", "Jump", "Jump_Start"]:
+			check(player != null and player.has_animation(clip), "animation %s is available" % clip)
+		if player and player.has_animation("Jog_Fwd"):
+			check(player.get_animation("Jog_Fwd").loop_mode == Animation.LOOP_LINEAR, "locomotion clips loop")
+		check(visual.find_children("*", "Skeleton3D", true, false).size() == 1, "visual has a skeleton")
+	world.free()
+
+
+## Clip names and natural speeds (m/s) come from the root-motion version of
+## the library; playback speed is scaled so feet don't slide.
+func test_locomotion_clip_choice() -> void:
+	var idle := CharacterVisual.choose_clip(0.0, true)
+	check(idle[0] == "Idle", "standing still idles (%s)" % [idle])
+	var jog := CharacterVisual.choose_clip(5.0, true)
+	check(jog[0] == "Jog_Fwd" and absf(jog[1] - 5.0 / 5.357) < 0.01, "5 m/s jogs at 0.93x (%s)" % [jog])
+	var walk := CharacterVisual.choose_clip(1.0, true)
+	check(walk[0] == "Walk", "1 m/s walks (%s)" % [walk])
+	var sprint := CharacterVisual.choose_clip(8.0, true)
+	check(sprint[0] == "Sprint", "8 m/s sprints (%s)" % [sprint])
+	var air := CharacterVisual.choose_clip(5.0, false)
+	check(air[0] == "Jump", "airborne uses the jump loop (%s)" % [air])
+
+
+## Without strafe or backpedal clips, the body turns toward its direction of
+## travel (up to 90 degrees either side of the aim) and runs backwards by
+## playing the forward cycle in reverse. Positive yaw turns left.
+func test_body_turns_toward_travel() -> void:
+	var cases := [
+		[Vector3(0, 0, -1), 0.0, false, "forward"],
+		[Vector3(1, 0, 0), -PI / 2, false, "strafe right"],
+		[Vector3(-1, 0, 0), PI / 2, false, "strafe left"],
+		[Vector3(0, 0, 1), 0.0, true, "backwards"],
+		[Vector3(1, 0, 1), PI / 4, true, "back and right"],
+		[Vector3(1, 0, -1), -PI / 4, false, "forward and right"],
+	]
+	for c: Array in cases:
+		var turn := CharacterVisual.body_turn(c[0])
+		check(absf(angle_difference(turn[0], c[1])) < 0.001 and turn[1] == c[2],
+			"%s: yaw %.2f reverse %s (got %.2f, %s)" % [c[3], c[1], c[2], turn[0], turn[1]])
 
 
 ## Reconciliation depends on this: restoring a captured state and replaying

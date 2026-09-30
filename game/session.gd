@@ -32,6 +32,7 @@ var _smp: SceneMultiplayer
 var _source: Object  # HumanInput or ScriptedInput
 var _hud: Label
 var _ended := false
+var _visuals := not DisplayServer.get_name() == "headless"
 var _seq := 0
 
 # Server half.
@@ -46,7 +47,7 @@ var _loot_seed := 0
 # Client half.
 var _pending: Array[PlayerInput] = []
 var _own_state: Array = []   # newest server entry for us, not yet reconciled
-var _remote_samples := {}    # peer id -> Array of [server tick, position, yaw]
+var _remote_samples := {}    # peer id -> Array of [server tick, position, yaw, grounded]
 var _roster := {}            # peer id -> name
 var _latest_server_tick := -1
 var _render_tick := -1.0
@@ -232,7 +233,7 @@ func _on_peer_disconnected(id: int) -> void:
 
 
 func _add_player(id: int, player_name: String) -> Character:
-	var character := world.spawn_character(id, player_name, world.spawn_point(_spawn_index))
+	var character := world.spawn_character(id, player_name, world.spawn_point(_spawn_index), _visuals)
 	_spawn_index += 1
 	_players[id] = {"name": player_name, "queue": [], "newest_seq": 0, "last_seq": 0, "travelled": 0.0}
 	return character
@@ -333,7 +334,7 @@ func _s2c_welcome(state: Dictionary) -> void:
 	local_id = _smp.get_unique_id()
 	_latest_server_tick = state.tick
 	_spawn_pos = state.spawn
-	world.spawn_character(local_id, config.name, _spawn_pos)
+	world.spawn_character(local_id, config.name, _spawn_pos, _visuals)
 	_become_local(local_id)
 	_log("joined as peer %d on map '%s' (loot seed %d)" % [local_id, world.map_id, state.loot_seed])
 
@@ -367,9 +368,9 @@ func _on_snapshot(server_tick: int, states: Array) -> void:
 			continue
 		var state: Array = entry[1]
 		if not world.characters.has(id):
-			world.spawn_character(id, _roster.get(id, "peer%d" % id), state[0])
+			world.spawn_character(id, _roster.get(id, "peer%d" % id), state[0], _visuals)
 			_remote_samples[id] = []
-		_remote_samples[id].push_back([server_tick, state[0], state[2]])
+		_remote_samples[id].push_back([server_tick, state[0], state[2], state[3]])
 	for id: int in world.characters.keys():
 		if id != local_id and not seen.has(id):
 			world.remove_character(id)
@@ -432,6 +433,7 @@ func _interpolate_remotes() -> void:
 		while samples.size() >= 2 and samples[1][0] <= _render_tick:
 			samples.pop_front()
 		var a: Array = samples[0]
+		character.grounded = a[3]  # only drives animation on this side
 		if samples.size() >= 2 and _render_tick >= a[0]:
 			var b: Array = samples[1]
 			var t: float = (_render_tick - a[0]) / float(b[0] - a[0])
@@ -505,6 +507,7 @@ func _final_report() -> String:
 		"id=%d" % local_id,
 		"players=%d" % world.characters.size(),
 		"others=%s" % ",".join(others),
+		"visuals=%d" % CharacterVisual.created,
 	])
 	if world.characters.has(local_id):
 		var pos: Vector3 = world.characters[local_id].global_position

@@ -1,0 +1,7 @@
+UAL1_Standard.glb: Universal Animation Library (Standard) by Quaternius
+https://quaternius.com/packs/universalanimationlibrary.html
+
+CC0 1.0 Universal (CC0 1.0) Public Domain Dedication
+https://creativecommons.org/publicdomain/zero/1.0/
+
+The non-root-motion ("Unreal-Godot/UAL1_Standard.glb") file, unmodified.

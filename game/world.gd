@@ -35,9 +35,9 @@ func spawn_point(index: int) -> Vector3:
 	return Vector3(s[0], s[1], s[2])
 
 
-func spawn_character(id: int, player_name: String, pos: Vector3) -> Character:
+func spawn_character(id: int, player_name: String, pos: Vector3, with_visuals := false) -> Character:
 	var character := Character.new()
-	character.setup(id, player_name)
+	character.setup(id, player_name, with_visuals)
 	add_child(character)
 	character.global_position = pos
 	character.reset_physics_interpolation()
