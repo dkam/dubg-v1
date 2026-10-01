@@ -1,6 +1,6 @@
-# Rout
+# DUBG
 
-A PUBG-style battle royale for a few friends plus teams of bots. Godot 4,
+Dkam's Uknown Battle Ground - A PUBG-style battle royale for a few friends plus teams of bots. Godot 4,
 Linux first. Very early: right now it's capsules on a plane with working
 netcode.
 
